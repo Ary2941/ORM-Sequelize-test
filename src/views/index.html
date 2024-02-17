@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Clientes</title>
+    <style>
+        /* Estilos opcionais para melhorar a apresentação */
+        input[type="text"] {
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>CRUD Clientes</h2>
+
+    <!-- Formulário para adicionar ou atualizar cliente -->
+    <form id="clienteForm">
+        <label for="nome">Nome:</label><br>
+        <input type="text" id="nome" name="nome"><br>
+        <label for="email">Email:</label><br>
+        <input type="text" id="email" name="email"><br>
+        <button type="submit" id="submitBtn">Salvar</button>
+    </form>
+
+    <hr>
+
+    <!-- Tabela para exibir clientes -->
+    <table id="clienteTable">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="clienteTableBody">
+            <!-- Linhas da tabela serão adicionadas dinamicamente -->
+        </tbody>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script>
+        const baseUrl = 'http://localhost:3000';
+        // Array para armazenar clientes (simulando um banco de dados)
+        let clientes = [];
+
+        // Função para exibir clientes na tabela
+        async function exibirClientes() {
+            try {
+                const response = await axios.get(`${baseUrl}/clients`);
+                clientes = response.data;
+                
+                const tabela = document.getElementById("clienteTableBody");
+                tabela.innerHTML = "";
+
+                clientes.forEach(cliente => {
+                    const row = tabela.insertRow();
+                    row.innerHTML = `
+                        <td>${cliente.nome}</td>
+                        <td>${cliente.email}</td>
+                        <td><button onclick="editarCliente(${cliente.id})">Editar</button>
+                            <button onclick="removerCliente(${cliente.id})">Remover</button></td>
+                    `;
+                });
+
+
+            } catch (error) {
+                console.error('Erro ao obter clientes:', error.message);
+            }
+        }
+
+        // função para adicionar clientes na tabela
+        async function adicionarClientes(event){
+            event.preventDefault(); // Impede o comportamento padrão do formulário
+            const nome = document.getElementById("nome").value;
+            const email = document.getElementById("email").value;
+            try {
+            const response = await axios.post(`${baseUrl}/clients`, { nome, email });
+            console.log('Cliente de nome',response.data.nome,"de email",response.data.email, "adicionado");
+            exibirClientes();
+            } catch (error) {
+                console.error('Erro ao adicionar clientes:', error.message);
+            }
+        }
+
+
+        // Função para adicionar ou atualizar um cliente
+        function adicionarOuAtualizarCliente(event) {
+            event.preventDefault(); // Impede o comportamento padrão do formulário
+
+            const nome = document.getElementById("nome").value;
+            const email = document.getElementById("email").value;
+
+            if (nome && email) {
+                const clienteExistente = clientes.find(cliente => cliente.email === email);
+
+                if (clienteExistente) {
+                    // Atualiza o cliente existente
+                    clienteExistente.nome = nome;
+                } else {
+                    // Adiciona um novo cliente
+                    clientes.push({ nome, email });
+                }
+
+                // Limpa os campos do formulário
+                document.getElementById("nome").value = "";
+                document.getElementById("email").value = "";
+
+                // Exibe novamente os clientes na tabela
+                exibirClientes();
+            } else {
+                alert("Por favor, preencha todos os campos.");
+            }
+        }
+
+        // Função para editar um cliente
+        async function editarCliente(index) {
+            console.log(index);
+            const nome = document.getElementById("nome").value;
+            const email = document.getElementById("email").value;
+            const response = await axios.put(`${baseUrl}/clients/${index}`, { nome, email });
+            exibirClientes();
+        }
+
+
+
+        // Função para remover um cliente
+        async function removerCliente(index) {
+            try {
+                const response = await axios.delete(`${baseUrl}/clients/${index}`);
+                console.log("Cliente " + response.data.message + " removido.");
+                exibirClientes();
+            } catch (error) {
+                console.error('Erro ao remover cliente:', error.message);
+            }
+        }
+
+        // Adiciona o evento de submit para o formulário
+        document.getElementById("clienteForm").addEventListener("submit", adicionarClientes);
+
+        // Exibe inicialmente os clientes na tabela (vazio no início)
+        exibirClientes();
+    </script>
+</body>
+</html>
